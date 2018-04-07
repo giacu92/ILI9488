@@ -200,7 +200,8 @@ void ILI9488::commandList(uint8_t *addr) {
 }
 
 
-void ILI9488::begin(void) {
+void ILI9488::begin(void)
+{
   if (_rst > 0) {
     pinMode(_rst, OUTPUT);
     digitalWrite(_rst, LOW);
@@ -218,6 +219,7 @@ void ILI9488::begin(void) {
 
   if(hwSPI) { // Using hardware SPI
     SPI.begin();
+    dmaInit(2);
 
 #ifndef SPI_HAS_TRANSACTION
     SPI.setBitOrder(MSBFIRST);
@@ -249,7 +251,7 @@ void ILI9488::begin(void) {
   // toggle RST low to reset
   if (_rst > 0) {
     digitalWrite(_rst, HIGH);
-    delay(5);
+    delay(10);
     digitalWrite(_rst, LOW);
     delay(20);
     digitalWrite(_rst, HIGH);
@@ -373,6 +375,11 @@ void ILI9488::begin(void) {
   // writedata(0x31);
   // writedata(0x36);
   // writedata(0x0F);
+    
+    //SOFT RESET:
+    writecommand(ILI9488_SWRESET);
+    delay(150);
+    writecommand(ILI9488_DISPOFF);
 
 
   writecommand(0xE0);
@@ -412,26 +419,27 @@ void ILI9488::begin(void) {
 
 
 
-	writecommand(0XC0);      //Power Control 1
+	writecommand(0XC0); //Power Control 1
 	writedata(0x17);    //Vreg1out
 	writedata(0x15);    //Verg2out
 
-	writecommand(0xC1);      //Power Control 2
+	writecommand(0xC1); //Power Control 2
 	writedata(0x41);    //VGH,VGL
 
-	writecommand(0xC5);      //Power Control 3
+	writecommand(0xC5); //Power Control 3
 	writedata(0x00);
 	writedata(0x12);    //Vcom
 	writedata(0x80);
+    writedata(0x40);
 
 	writecommand(0x36);      //Memory Access
 	writedata(0x48);
 
-	writecommand(0x3A);      // Interface Pixel Format
+	writecommand(0x3A);   // Interface Pixel Format
 	writedata(0x66); 	  //18 bit
 
-	writecommand(0XB0);      // Interface Mode Control
-	writedata(0x80);     			 //SDO NOT USE
+	writecommand(0XB0);   // Interface Mode Control
+	writedata(0x00);      //SDO NOT USE (cambia in 0x80 default)
 
 	writecommand(0xB1);      //Frame rate
 	writedata(0xA0);    //60Hz
@@ -439,10 +447,10 @@ void ILI9488::begin(void) {
 	writecommand(0xB4);      //Display Inversion Control
 	writedata(0x02);    //2-dot
 
-	writecommand(0XB6);      //Display Function Control  RGB/MCU Interface Control
-
+	writecommand(0xB6);      //Display Function Control  RGB/MCU Interface Control
 	writedata(0x02);    //MCU
 	writedata(0x02);    //Source,Gate scan dieection
+    writedata(0x3B);
 
 	writecommand(0XE9);      // Set Image Functio
 	writedata(0x00);    // Disable 24 bit data
@@ -452,6 +460,9 @@ void ILI9488::begin(void) {
 	writedata(0x51);
 	writedata(0x2C);
 	writedata(0x82);    // D7 stream, loose
+    
+    writecommand(0xFB); // Disable SPI READ to not interfere with other SPI DEVICES
+    writedata(0x00);
 
 
   writecommand(ILI9488_SLPOUT);    //Exit Sleep
@@ -643,9 +654,12 @@ void ILI9488::write16BitColor(uint16_t color){
   g = (g * 255) / 63;
   b = (b * 255) / 31;
 
-  spiwrite(r);
-  spiwrite(g);
-  spiwrite(b);
+  //spiwrite(r);
+  //spiwrite(g);
+  //spiwrite(b);
+    dmaSend(r);
+    dmaSend(g);
+    dmaSend(b);
   // #endif
 }
 
@@ -754,6 +768,71 @@ void ILI9488::fillScreen(uint16_t color) {
   fillRect(0, 0,  _width, _height, color);
 }
 
+void ILI9488::fillScreen2(uint16_t color)
+{
+    uint8_t r = (color & 0xF800) >> 11;
+    uint8_t g = (color & 0x07E0) >> 5;
+    uint8_t b = color & 0x001F;
+    
+    r = (r * 255) / 31;
+    g = (g * 255) / 63;
+    b = (b * 255) / 31;
+    
+    if (hwSPI) spi_begin();
+    setAddrWindow(0, 0, _width, _height);
+    
+    digitalWrite(_dc, HIGH);
+    digitalWrite(_cs, LOW);
+    
+    for(int y=_height; y>0; y--)
+    {
+        for(int x=_width; x>0; x--)
+        {
+            dmaSend(r);
+            dmaSend(g);
+            dmaSend(b);
+        }
+    }
+    
+    digitalWrite(_cs, HIGH);
+    if(hwSPI) spi_end();
+}
+
+void ILI9488::fillRect2(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+{
+    uint8_t r = (color & 0xF800) >> 11;
+    uint8_t g = (color & 0x07E0) >> 5;
+    uint8_t b = color & 0x001F;
+    
+    r = (r * 255) / 31;
+    g = (g * 255) / 63;
+    b = (b * 255) / 31;
+    
+    // rudimentary clipping (drawChar w/big text requires this)
+    if((x >= _width) || (y >= _height)) return;
+    if((x + w - 1) >= _width)  w = _width  - x;
+    if((y + h - 1) >= _height) h = _height - y;
+    
+    if (hwSPI) spi_begin();
+    setAddrWindow(x, y, x+w-1, y+h-1);
+    
+    digitalWrite(_dc, HIGH);
+    digitalWrite(_cs, LOW);
+
+    for(y=h; y>0; y--)
+    {
+        for(x=w; x>0; x--)
+        {
+            dmaSend(r);
+            dmaSend(g);
+            dmaSend(b);
+        }
+    }
+    digitalWrite(_cs, HIGH);
+
+    if (hwSPI) spi_end();
+}
+
 // fill a rectangle
 void ILI9488::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
   uint16_t color) {
@@ -816,7 +895,8 @@ void ILI9488::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
 
 
 // Pass 8-bit (each) R,G,B, get back 16-bit packed color
-uint16_t ILI9488::color565(uint8_t r, uint8_t g, uint8_t b) {
+uint16_t ILI9488::color565(uint8_t r, uint8_t g, uint8_t b)
+{
   return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
 }
 
@@ -915,25 +995,32 @@ uint8_t ILI9488::spiread(void) {
 }
 
 
-uint8_t ILI9488::readcommand8(uint8_t c, uint8_t index) {
-   if (hwSPI) spi_begin();
-   digitalWrite(_dc, LOW); // command
-   digitalWrite(_cs, LOW);
-   spiwrite(0xD9);  // woo sekret command?
-   digitalWrite(_dc, HIGH); // data
-   spiwrite(0x10 + index);
-   digitalWrite(_cs, HIGH);
-
-   digitalWrite(_dc, LOW);
-   digitalWrite(_sclk, LOW);
-   digitalWrite(_cs, LOW);
-   spiwrite(c);
-
-   digitalWrite(_dc, HIGH);
-   uint8_t r = spiread();
-   digitalWrite(_cs, HIGH);
-   if (hwSPI) spi_end();
-   return r;
+uint8_t ILI9488::readcommand8(uint8_t c, uint8_t index)
+{
+    if (hwSPI) spi_begin();
+    digitalWrite(_dc, LOW); // command
+    digitalWrite(_cs, LOW);
+    spiwrite(0xFB);  // woo sekret command?
+    digitalWrite(_dc, HIGH); // data
+    spiwrite(0x10 + index);
+    digitalWrite(_cs, HIGH);
+    
+    digitalWrite(_dc, LOW);
+    digitalWrite(_sclk, LOW);
+    digitalWrite(_cs, LOW);
+    spiwrite(c);
+    
+    digitalWrite(_dc, HIGH);
+    uint8_t r = spiread();
+    
+    //once done finishing read i have to put 0xFB back in no read status (disable bit7):
+    digitalWrite(_dc, LOW); // command
+    spiwrite(0xFB);
+    spiwrite(0x00);
+    
+    digitalWrite(_cs, HIGH);
+    if (hwSPI) spi_end();
+    return r;
 }
 
 

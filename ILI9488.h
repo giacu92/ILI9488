@@ -98,6 +98,8 @@ typedef volatile uint32 RwReg;
 
 */
 
+#define ILI_SPI_CHIP_SEL 3
+
 // Color definitions
 #define ILI9488_BLACK       0x0000      /*   0,   0,   0 */
 #define ILI9488_NAVY        0x000F      /*   0,   0, 128 */
@@ -135,11 +137,12 @@ class ILI9488 : public Adafruit_GFX {
            pushColors(uint16_t *data, uint8_t len, boolean first),
            drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h),
            fillScreen(uint16_t color),
+           fillScreen2(uint16_t color),
            drawPixel(int16_t x, int16_t y, uint16_t color),
            drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color),
            drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color),
-           fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
-             uint16_t color),
+           fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color),
+           fillRect2(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color),
            setRotation(uint8_t r),
            invertDisplay(boolean i);
   uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
@@ -163,9 +166,41 @@ class ILI9488 : public Adafruit_GFX {
  private:
   uint8_t  tabcolor;
 
-
-
   boolean  hwSPI;
+    
+    /** SPI send a byte */
+    __attribute__((always_inline))
+    void dmaSend(uint8_t b)
+    {
+        dmaSpiTransfer(b);
+    }
+    __attribute__((always_inline))
+    uint8_t dmaSpiTransfer(uint8_t b)
+    {
+        Spi* pSpi = SPI0;
+        
+        pSpi->SPI_TDR = b;
+        while ((pSpi->SPI_SR & SPI_SR_RDRF) == 0) {}
+        b = pSpi->SPI_RDR;
+        return b;
+    }
+    
+    //  initialize SPI controller
+    void dmaInit(uint8_t sckDivisor)
+    {
+        uint8_t scbr = sckDivisor;
+        Spi* pSpi = SPI0;
+        //  disable SPI
+        pSpi->SPI_CR = SPI_CR_SPIDIS;
+        // reset SPI
+        pSpi->SPI_CR = SPI_CR_SWRST;
+        // no mode fault detection, set master mode
+        pSpi->SPI_MR = SPI_PCS(ILI_SPI_CHIP_SEL) | SPI_MR_MODFDIS | SPI_MR_MSTR;
+        // mode 0, 8-bit,
+        pSpi->SPI_CSR[ILI_SPI_CHIP_SEL] = SPI_CSR_SCBR(scbr) | SPI_CSR_NCPHA | SPI_CSR_BITS_8_BIT;
+        // enable SPI
+        pSpi->SPI_CR |= SPI_CR_SPIEN;
+    }
 
 #if defined (__AVR__) || defined(TEENSYDUINO)
   uint8_t mySPCR;

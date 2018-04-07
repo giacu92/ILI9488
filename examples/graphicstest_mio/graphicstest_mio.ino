@@ -18,10 +18,10 @@
 #include <Adafruit_GFX.h>
 #include <ILI9488.h>
 
-#define TFT_CS         PA1
-#define TFT_DC         PB3
-#define TFT_LED        PB0
-#define TFT_RST        PB4
+#define TFT_CS         10
+#define TFT_DC         9
+#define TFT_LED        1
+#define TFT_RST        13
 
 // Use hardware SPI (on Uno, #13, #12, #11) and the above for CS/DC
 ILI9488 tft = ILI9488(TFT_CS, TFT_DC, TFT_RST);
@@ -29,6 +29,8 @@ ILI9488 tft = ILI9488(TFT_CS, TFT_DC, TFT_RST);
 //Adafruit_ILI9488 tft = Adafruit_ILI9488(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
 
 void setup() {
+  pinMode(TFT_CS, OUTPUT);
+  digitalWrite(TFT_CS, HIGH);
   Serial.begin(9600);
   Serial.println("ILI9488 Test!");
 
