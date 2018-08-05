@@ -18,10 +18,9 @@
 #include <Adafruit_GFX.h>
 #include <ILI9488.h>
 
-#define TFT_CS         10
-#define TFT_DC         9
-#define TFT_LED        1
-#define TFT_RST        13
+#define TFT_CS  47
+#define TFT_DC  48
+#define TFT_RST 46
 
 // Use hardware SPI (on Uno, #13, #12, #11) and the above for CS/DC
 ILI9488 tft = ILI9488(TFT_CS, TFT_DC, TFT_RST);
@@ -113,9 +112,9 @@ void loop(void) {
 unsigned long testFillScreen() {
   unsigned long start = micros();
   tft.fillScreen(ILI9488_BLACK);
-  tft.fillScreen(ILI9488_RED);
+  tft.fillScreen2(ILI9488_RED);
   tft.fillScreen(ILI9488_GREEN);
-  tft.fillScreen(ILI9488_BLUE);
+  tft.fillScreen2(ILI9488_BLUE);
   tft.fillScreen(ILI9488_BLACK);
   return micros() - start;
 }

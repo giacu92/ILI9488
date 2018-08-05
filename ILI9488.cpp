@@ -750,7 +750,8 @@ void ILI9488::drawFastHLine(int16_t x, int16_t y, int16_t w,
   digitalWrite(_dc, HIGH);
   digitalWrite(_cs, LOW);
 #endif
-  while (w--) {
+  while (w--)
+  {
     // spiwrite(hi);
     // spiwrite(lo);
     // spiwrite(0); // added for 24 bit
