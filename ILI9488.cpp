@@ -42,7 +42,7 @@ static inline void spi_begin(void) {
   SPI.beginTransaction(SPISettings(16000000, MSBFIRST, SPI_MODE0));
 #else
     // max speed!
-  SPI.beginTransaction(SPISettings(24000000, MSBFIRST, SPI_MODE0));
+  SPI.beginTransaction(SPISettings(48000000, MSBFIRST, SPI_MODE0));
 #endif
 }
 static inline void spi_end(void) __attribute__((always_inline));
@@ -275,108 +275,7 @@ void ILI9488::begin(void)
   //if(cmdList) commandList(cmdList);
 
   if (hwSPI) spi_begin();
-  // writecommand(0xEF);
-  // writedata(0x03);
-  // writedata(0x80);
-  // writedata(0x02);
-  //
-  // writecommand(0xCF);
-  // writedata(0x00);
-  // writedata(0XC1);
-  // writedata(0X30);
-  //
-  // writecommand(0xED);
-  // writedata(0x64);
-  // writedata(0x03);
-  // writedata(0X12);
-  // writedata(0X81);
-  //
-  // writecommand(0xE8);
-  // writedata(0x85);
-  // writedata(0x00);
-  // writedata(0x78);
-  //
-  // writecommand(0xCB);
-  // writedata(0x39);
-  // writedata(0x2C);
-  // writedata(0x00);
-  // writedata(0x34);
-  // writedata(0x02);
-  //
-  // writecommand(0xF7);
-  // writedata(0x20);
-  //
-  // writecommand(0xEA);
-  // writedata(0x00);
-  // writedata(0x00);
-  //
-  // writecommand(ILI9488_PWCTR1);    //Power control
-  // writedata(0x23);   //VRH[5:0]
-  //
-  // writecommand(ILI9488_PWCTR2);    //Power control
-  // writedata(0x10);   //SAP[2:0];BT[3:0]
-  //
-  // writecommand(ILI9488_VMCTR1);    //VCM control
-  // writedata(0x3e); //¶Ô±È¶Èµ÷½Ú
-  // writedata(0x28);
-  //
-  // writecommand(ILI9488_VMCTR2);    //VCM control2
-  // writedata(0x86);  //--
-  //
-  // writecommand(ILI9488_MADCTL);    // Memory Access Control
-  // writedata(0x48);
-  //
-  // writecommand(ILI9488_PIXFMT);
-  // writedata(0x55);
-  //
-  // writecommand(ILI9488_FRMCTR1);
-  // writedata(0x00);
-  // writedata(0x18);
-  //
-  // writecommand(ILI9488_DFUNCTR);    // Display Function Control
-  // writedata(0x08);
-  // writedata(0x82);
-  // writedata(0x27);
-  //
-  // writecommand(0xF2);    // 3Gamma Function Disable
-  // writedata(0x00);
-  //
-  // writecommand(ILI9488_GAMMASET);    //Gamma curve selected
-  // writedata(0x01);
-  //
-  // writecommand(ILI9488_GMCTRP1);    //Set Gamma
-  // writedata(0x0F);
-  // writedata(0x31);
-  // writedata(0x2B);
-  // writedata(0x0C);
-  // writedata(0x0E);
-  // writedata(0x08);
-  // writedata(0x4E);
-  // writedata(0xF1);
-  // writedata(0x37);
-  // writedata(0x07);
-  // writedata(0x10);
-  // writedata(0x03);
-  // writedata(0x0E);
-  // writedata(0x09);
-  // writedata(0x00);
-  //
-  // writecommand(ILI9488_GMCTRN1);    //Set Gamma
-  // writedata(0x00);
-  // writedata(0x0E);
-  // writedata(0x14);
-  // writedata(0x03);
-  // writedata(0x11);
-  // writedata(0x07);
-  // writedata(0x31);
-  // writedata(0xC1);
-  // writedata(0x48);
-  // writedata(0x08);
-  // writedata(0x0F);
-  // writedata(0x0C);
-  // writedata(0x31);
-  // writedata(0x36);
-  // writedata(0x0F);
+
     
     //SOFT RESET:
     writecommand(ILI9488_SWRESET);
@@ -1044,8 +943,6 @@ uint8_t ILI9488::readcommand8(uint8_t c, uint8_t index)
     if (hwSPI) spi_end();
     return r;
 }
-
-
 
 /*
 
