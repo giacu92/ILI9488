@@ -137,7 +137,8 @@ void ILI9488::writecommand(uint8_t c) {
   digitalWrite(_cs, LOW);
 #endif
 
-  spiwrite(c);
+  //spiwrite(c);
+  dmaSend(c);
 
 #if defined(USE_FAST_PINIO) && !defined (_VARIANT_ARDUINO_STM32_)
   *csport |= cspinmask;
@@ -156,7 +157,8 @@ void ILI9488::writedata(uint8_t c) {
   digitalWrite(_cs, LOW);
 #endif
 
-  spiwrite(c);
+  //spiwrite(c);
+  dmaSend(c);
 
 #if defined(USE_FAST_PINIO) && !defined (_VARIANT_ARDUINO_STM32_)
   *csport |= cspinmask;
@@ -543,18 +545,19 @@ void ILI9488::drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, 
       uint8_t b2 = img[count];
       count++;
       uint16_t color = b1 << 8 | b2;
-      linebuff[pixcount] = (((color & 0xF800) >> 11)* 255) / 31;
+      linebuff[pixcount] = ((color & 0xF800) >> 11) << 3;
       pixcount++;
-      linebuff[pixcount] = (((color & 0x07E0) >> 5) * 255) / 63;
+      linebuff[pixcount] = ((color & 0x07E0) >> 5) << 2;
       pixcount++;
-      linebuff[pixcount] = ((color & 0x001F)* 255) / 31;
+      linebuff[pixcount] = (color & 0x001F) << 3;
       pixcount++;
     } // for row
     #if defined (__STM32F1__)
       SPI.dmaSend(linebuff, w*3);
     #else
       for(uint16_t b = 0; b < w*3; b++){
-        spiwrite(linebuff[b]);
+        //spiwrite(linebuff[b]);
+          dmaSend(linebuff[b]);
       }
     #endif
 
@@ -614,18 +617,19 @@ void ILI9488::pushColors(uint16_t *data, uint8_t len, boolean first) {
   }
   while(lencount--) {
     color = *data++;
-    buff[count] = (((color & 0xF800) >> 11)* 255) / 31;
+    buff[count] = ((color & 0xF800) >> 11) << 3;
     count++;
-    buff[count] = (((color & 0x07E0) >> 5) * 255) / 63;
+    buff[count] = ((color & 0x07E0) >> 5) << 2;
     count++;
-    buff[count] = ((color & 0x001F)* 255) / 31;
+    buff[count] = (color & 0x001F) << 3;
     count++;
   }
   #if defined (__STM32F1__)
     SPI.dmaSend(buff, len*3);
   #else
     for(uint16_t b = 0; b < len*3; b++){
-      spiwrite(buff[b]);
+      //spiwrite(buff[b]);
+        dmaSend(buff[b]);
     }
   #endif
   #if defined(USE_FAST_PINIO) && !defined (_VARIANT_ARDUINO_STM32_)
@@ -646,13 +650,9 @@ void ILI9488::write16BitColor(uint16_t color){
   //     };
   //     SPI.dmaSend(buff, 3);
   // #else
-  uint8_t r = (color & 0xF800) >> 11;
-  uint8_t g = (color & 0x07E0) >> 5;
-  uint8_t b = color & 0x001F;
-
-  r = (r * 255) / 31;
-  g = (g * 255) / 63;
-  b = (b * 255) / 31;
+  uint8_t r = ((color & 0xF800) >> 11) << 3;
+  uint8_t g = ((color & 0x07E0) >> 5) << 2;
+  uint8_t b = (color & 0x001F ) << 3;
 
   //spiwrite(r);
   //spiwrite(g);
@@ -750,8 +750,7 @@ void ILI9488::drawFastHLine(int16_t x, int16_t y, int16_t w,
   digitalWrite(_dc, HIGH);
   digitalWrite(_cs, LOW);
 #endif
-  while (w--)
-  {
+  while (w--) {
     // spiwrite(hi);
     // spiwrite(lo);
     // spiwrite(0); // added for 24 bit
@@ -771,13 +770,9 @@ void ILI9488::fillScreen(uint16_t color) {
 
 void ILI9488::fillScreen2(uint16_t color)
 {
-    uint8_t r = (color & 0xF800) >> 11;
-    uint8_t g = (color & 0x07E0) >> 5;
-    uint8_t b = color & 0x001F;
-    
-    r = (r * 255) / 31;
-    g = (g * 255) / 63;
-    b = (b * 255) / 31;
+    uint8_t r = ((color & 0xF800) >> 11) << 3;
+    uint8_t g = ((color & 0x07E0) >> 5) << 2;
+    uint8_t b = (color & 0x001F) << 3;
     
     if (hwSPI) spi_begin();
     setAddrWindow(0, 0, _width, _height);
@@ -801,13 +796,9 @@ void ILI9488::fillScreen2(uint16_t color)
 
 void ILI9488::fillRect2(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
-    uint8_t r = (color & 0xF800) >> 11;
-    uint8_t g = (color & 0x07E0) >> 5;
-    uint8_t b = color & 0x001F;
-    
-    r = (r * 255) / 31;
-    g = (g * 255) / 63;
-    b = (b * 255) / 31;
+    uint8_t r = ((color & 0xF800) >> 11) << 3;
+    uint8_t g = ((color & 0x07E0) >> 5) << 2;
+    uint8_t b = (color & 0x001F) << 3;
     
     // rudimentary clipping (drawChar w/big text requires this)
     if((x >= _width) || (y >= _height)) return;
@@ -858,9 +849,9 @@ void ILI9488::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
 #if (__STM32F1__)
   //use dma fast fills
     uint8_t buff[4] = {
-      (((color & 0xF800) >> 11)* 255) / 31,
-      (((color & 0x07E0) >> 5) * 255) / 63,
-      ((color & 0x001F)* 255) / 31
+      (((color & 0xF800) >> 11) << 3,
+      (((color & 0x07E0) >> 5) << 2,
+      ((color & 0x001F)  << 3
     };
     uint8_t linebuff[w*3+1];
     int cnt = 0;
@@ -899,6 +890,31 @@ void ILI9488::fillRect(int16_t x, int16_t y, int16_t w, int16_t h,
 uint16_t ILI9488::color565(uint8_t r, uint8_t g, uint8_t b)
 {
   return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+
+void ILI9488::pushRGB(uint8_t r, uint8_t g, uint8_t b)
+{
+    if (hwSPI) spi_begin();
+    
+    #if defined(USE_FAST_PINIO) && !defined (_VARIANT_ARDUINO_STM32_)
+        *dcport |=  dcpinmask;
+        *csport &= ~cspinmask;
+    #else
+        digitalWrite(_dc, HIGH);
+        digitalWrite(_cs, LOW);
+    #endif
+    
+    dmaSend(r);
+    dmaSend(g);
+    dmaSend(b);
+    
+    #if defined(USE_FAST_PINIO) && !defined (_VARIANT_ARDUINO_STM32_)
+        *csport |= cspinmask;
+    #else
+        digitalWrite(_cs, HIGH);
+    #endif
+    
+    if (hwSPI) spi_end();
 }
 
 
@@ -1001,23 +1017,28 @@ uint8_t ILI9488::readcommand8(uint8_t c, uint8_t index)
     if (hwSPI) spi_begin();
     digitalWrite(_dc, LOW); // command
     digitalWrite(_cs, LOW);
-    spiwrite(0xFB);  // woo sekret command?
+    //spiwrite(0xFB);  // woo sekret command?
+    dmaSend(0xFB);
     digitalWrite(_dc, HIGH); // data
-    spiwrite(0x10 + index);
+    //spiwrite(0x10 + index);
+    dmaSend(0x10 + index);
     digitalWrite(_cs, HIGH);
     
     digitalWrite(_dc, LOW);
     digitalWrite(_sclk, LOW);
     digitalWrite(_cs, LOW);
-    spiwrite(c);
+    //spiwrite(c);
+    dmaSend(c);
     
     digitalWrite(_dc, HIGH);
     uint8_t r = spiread();
     
     //once done finishing read i have to put 0xFB back in no read status (disable bit7):
     digitalWrite(_dc, LOW); // command
-    spiwrite(0xFB);
-    spiwrite(0x00);
+    //spiwrite(0xFB);
+    //spiwrite(0x00);
+    dmaSend(0xFB);
+    dmaSend(0x00);
     
     digitalWrite(_cs, HIGH);
     if (hwSPI) spi_end();

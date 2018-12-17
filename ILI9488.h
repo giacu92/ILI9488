@@ -35,7 +35,7 @@
 typedef volatile uint32 RwReg;
 #endif
 #if defined (__AVR__) || defined(TEENSYDUINO) || defined (__arm__) || defined (__STM32F1__)
-#define USE_FAST_PINIO
+    #define USE_FAST_PINIO
 #endif
 
 #define ILI9488_TFTWIDTH  320
@@ -129,22 +129,24 @@ class ILI9488 : public Adafruit_GFX {
 		   int8_t _RST, int8_t _MISO);
   ILI9488(int8_t _CS, int8_t _DC, int8_t _RST = -1);
 
-  void     begin(void),
-           setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1),
-           setScrollArea(uint16_t topFixedArea, uint16_t bottomFixedArea),
-           scroll(uint16_t pixels),
-           pushColor(uint16_t color),
-           pushColors(uint16_t *data, uint8_t len, boolean first),
-           drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h),
-           fillScreen(uint16_t color),
-           fillScreen2(uint16_t color),
-           drawPixel(int16_t x, int16_t y, uint16_t color),
-           drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color),
-           drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color),
-           fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color),
-           fillRect2(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color),
-           setRotation(uint8_t r),
-           invertDisplay(boolean i);
+  void begin(void),
+    setAddrWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1),
+    setScrollArea(uint16_t topFixedArea, uint16_t bottomFixedArea),
+    scroll(uint16_t pixels),
+    pushColor(uint16_t color),
+    pushColors(uint16_t *data, uint8_t len, boolean first),
+    drawImage(const uint8_t* img, uint16_t x, uint16_t y, uint16_t w, uint16_t h),
+    fillScreen(uint16_t color),
+    fillScreen2(uint16_t color),
+    drawPixel(int16_t x, int16_t y, uint16_t color),
+    drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color),
+    drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color),
+    fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color),
+    fillRect2(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color),
+    setRotation(uint8_t r),
+    invertDisplay(boolean i),
+    pushRGB(uint8_t r, uint8_t g, uint8_t b);
+    
   uint16_t color565(uint8_t r, uint8_t g, uint8_t b);
 
   /* These are not for current use, 8-bit protocol only! */
