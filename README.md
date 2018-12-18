@@ -1,6 +1,8 @@
 ### ILI9488 Arduino Library - DMA version
 I edited this library to interface with Arduino DUE DMA controller. It's still in beta and I will surely modify it by time to increase performace.
 
+[Youtube video comparison between libraries](https://www.youtube.com/watch?v=ioQKxQFuwUU)
+
 ## Original fork README.MD:
 This library is for support for the 320x480 tft controller over 4 wire SPI. It is based heavily on the [Adafruit_ILI9341](https://github.com/adafruit/Adafruit_ILI9341) library and is designed to work with the [Adafruit_GFX library](https://github.com/adafruit/Adafruit-GFX-Library). 
 
